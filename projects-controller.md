@@ -96,9 +96,9 @@ before_action :authenticate_user
 
 - **Purpose**: Authentication check to ensure only logged-in users can access projects
 - **Scope**: Applied to ALL controller actions (index, show, create, update, destroy)
-- **Implementation**: Not shown in this file but likely defined in `ApplicationController`
+- **Implementation**: defined in `ApplicationController` in main cheat sheet authentication section
 - **How it works**:
-  - Probably examines the request headers for an authentication token (JWT)
+  - examines the request headers for an authentication token (JWT)
   - Verifies the token's validity and identifies the user
   - Sets a `current_user` object that other methods can access
   - If authentication fails, returns a 401 Unauthorized response
