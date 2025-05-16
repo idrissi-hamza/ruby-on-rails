@@ -12,18 +12,18 @@ module Api
       before_action :authenticate_user
       before_action :set_project, only: [:show, :update, :destroy]
       before_action :authorize_user, only: [:update, :destroy]
-      
+
       # GET /api/v1/projects
       def index
         @projects = current_user.projects
         render json: @projects
       end
-      
+
       # GET /api/v1/projects/:id
       def show
         render json: @project
       end
-      
+
       # POST /api/v1/projects
       def create
         @project = current_user.projects.build(project_params)
@@ -33,7 +33,7 @@ module Api
           render json: { errors: @project.errors.full_messages }, status: :unprocessable_entity
         end
       end
-      
+
       # PUT /api/v1/projects/:id
       def update
         if @project.update(project_params)
@@ -42,23 +42,23 @@ module Api
           render json: { errors: @project.errors.full_messages }, status: :unprocessable_entity
         end
       end
-      
+
       # DELETE /api/v1/projects/:id
       def destroy
         @project.destroy
         head :no_content
       end
-      
+
       private
-      
+
       def set_project
         @project = Project.find(params[:id])
       end
-      
+
       def project_params
         params.require(:project).permit(:title, :description, :status)
       end
-      
+
       def authorize_user
         unless @project.user_id == current_user.id
           render json: { error: 'Unauthorized' }, status: :unauthorized
@@ -72,6 +72,7 @@ end
 ## Namespacing Structure
 
 The controller is nested within two modules:
+
 - `Api` - Top-level namespace for all API controllers
 - `V1` - Version 1 of the API
 
@@ -90,27 +91,32 @@ The controller uses three `before_action` callbacks to set up requests:
 ## CRUD Actions
 
 ### Index Action
+
 ```ruby
 def index
   @projects = current_user.projects
   render json: @projects
 end
 ```
+
 - Retrieves all projects belonging to the current user
 - Returns the projects as a JSON array
 - Scopes results to current user for security (users can only see their own projects)
 
 ### Show Action
+
 ```ruby
 def show
   render json: @project
 end
 ```
+
 - Displays a specific project (already loaded by `set_project`)
 - Returns the project as JSON
 - Note that `authorize_user` is not applied, allowing viewing of projects the user doesn't own (may be intentional if projects can be shared)
 
 ### Create Action
+
 ```ruby
 def create
   @project = current_user.projects.build(project_params)
@@ -121,12 +127,14 @@ def create
   end
 end
 ```
+
 - Builds a new project associated with the current user
 - Uses strong parameters via `project_params` to securely permit only allowed attributes
 - Returns the created project with 201 status on success
 - Returns validation errors with 422 status on failure
 
 ### Update Action
+
 ```ruby
 def update
   if @project.update(project_params)
@@ -136,43 +144,51 @@ def update
   end
 end
 ```
+
 - Updates an existing project (already verified to belong to current user by `authorize_user`)
 - Uses the same strong parameters as create
 - Returns the updated project on success
 - Returns validation errors with 422 status on failure
 
 ### Destroy Action
+
 ```ruby
 def destroy
   @project.destroy
   head :no_content
 end
 ```
+
 - Deletes an existing project (already verified to belong to current user)
 - Returns a 204 No Content status with no body on success
 
 ## Private Methods
 
 ### set_project
+
 ```ruby
 def set_project
   @project = Project.find(params[:id])
 end
 ```
+
 - Finds a project by its ID from the route params
 - Raises `ActiveRecord::RecordNotFound` if project doesn't exist (Rails will convert this to a 404 response)
 
 ### project_params
+
 ```ruby
 def project_params
   params.require(:project).permit(:title, :description, :status)
 end
 ```
+
 - Implements strong parameters to prevent mass assignment vulnerabilities
 - Requires a top-level `project` parameter
 - Only permits `title`, `description`, and `status` attributes to be set
 
 ### authorize_user
+
 ```ruby
 def authorize_user
   unless @project.user_id == current_user.id
@@ -180,6 +196,7 @@ def authorize_user
   end
 end
 ```
+
 - Verifies that the current user is the owner of the project
 - Returns 401 Unauthorized if a user tries to update or delete someone else's project
 - Simple but effective authorization check
@@ -187,6 +204,7 @@ end
 ## Security Considerations
 
 This controller implements several important security measures:
+
 1. Authentication on all endpoints
 2. Scoping of index results to current user only
 3. Explicit authorization checks for destructive actions
@@ -195,6 +213,7 @@ This controller implements several important security measures:
 ## Common Design Patterns
 
 This controller demonstrates several Rails best practices:
+
 - RESTful resource design
 - Skinny controllers (business logic would presumably be in models)
 - DRY code with before_action callbacks
@@ -206,6 +225,7 @@ This controller demonstrates several Rails best practices:
 ## Usage Examples
 
 ### Creating a project
+
 ```http
 POST /api/v1/projects
 Authorization: Bearer [jwt_token]
@@ -221,6 +241,7 @@ Content-Type: application/json
 ```
 
 ### Updating a project
+
 ```http
 PUT /api/v1/projects/1
 Authorization: Bearer [jwt_token]
@@ -234,7 +255,10 @@ Content-Type: application/json
 ```
 
 ### Listing user's projects
+
 ```http
 GET /api/v1/projects
 Authorization: Bearer [jwt_token]
 ```
+
+[Return to rails api cheat sheet](rails-api-cheat-sheet.md)

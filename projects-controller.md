@@ -12,18 +12,18 @@ module Api
       before_action :authenticate_user
       before_action :set_project, only: [:show, :update, :destroy]
       before_action :authorize_user, only: [:update, :destroy]
-      
+
       # GET /api/v1/projects
       def index
         @projects = current_user.projects
         render json: @projects
       end
-      
+
       # GET /api/v1/projects/:id
       def show
         render json: @project
       end
-      
+
       # POST /api/v1/projects
       def create
         @project = current_user.projects.build(project_params)
@@ -33,7 +33,7 @@ module Api
           render json: { errors: @project.errors.full_messages }, status: :unprocessable_entity
         end
       end
-      
+
       # PUT /api/v1/projects/:id
       def update
         if @project.update(project_params)
@@ -42,23 +42,23 @@ module Api
           render json: { errors: @project.errors.full_messages }, status: :unprocessable_entity
         end
       end
-      
+
       # DELETE /api/v1/projects/:id
       def destroy
         @project.destroy
         head :no_content
       end
-      
+
       private
-      
+
       def set_project
         @project = Project.find(params[:id])
       end
-      
+
       def project_params
         params.require(:project).permit(:title, :description, :status)
       end
-      
+
       def authorize_user
         unless @project.user_id == current_user.id
           render json: { error: 'Unauthorized' }, status: :unauthorized
@@ -72,6 +72,7 @@ end
 ## Namespacing Structure
 
 The controller is nested within two modules:
+
 - `Api` - Top-level namespace for all API controllers
 - `V1` - Version 1 of the API
 
@@ -141,6 +142,7 @@ before_action :authorize_user, only: [:update, :destroy]
 ### The Execution Order
 
 The callbacks run in the order they're defined:
+
 1. First `authenticate_user` verifies the user is logged in
 2. Then `set_project` loads the requested project into memory
 3. Finally `authorize_user` checks if the user has permission for this project
@@ -162,29 +164,33 @@ These constraints optimize performance by only running necessary code for each r
 ## CRUD Actions
 
 ### Index Action
+
 ```ruby
 def index
   @projects = current_user.projects
   render json: @projects
 end
 ```
+
 - **Purpose**: Retrieve all projects belonging to the current user
 - **Request Type**: GET
 - **Path**: `/api/v1/projects`
 - **Security**: Uses `current_user` to scope results, preventing access to others' projects
 - **Database Impact**: Performs a SELECT query with a WHERE condition on user_id
 - **Response Format**: JSON array of project objects
-- **Status Codes**: 
+- **Status Codes**:
   - 200 OK for successful response
   - 401 Unauthorized if authentication fails (from before_action)
 - **Pagination**: Not implemented here, but would be a common addition for larger datasets
 
 ### Show Action
+
 ```ruby
 def show
   render json: @project
 end
 ```
+
 - **Purpose**: Display a specific project by its ID
 - **Request Type**: GET
 - **Path**: `/api/v1/projects/:id`
@@ -199,6 +205,7 @@ end
   - 401 Unauthorized if authentication fails
 
 ### Create Action
+
 ```ruby
 def create
   @project = current_user.projects.build(project_params)
@@ -209,10 +216,11 @@ def create
   end
 end
 ```
+
 - **Purpose**: Create a new project associated with the current user
 - **Request Type**: POST
 - **Path**: `/api/v1/projects`
-- **Security**: 
+- **Security**:
   - Automatically associates with current user via `current_user.projects.build`
   - Uses strong parameters via `project_params` to prevent mass assignment
 - **Request Format**: Expects JSON with a `project` object containing attributes
@@ -227,6 +235,7 @@ end
 - **Validation**: Relies on model validations to ensure data integrity
 
 ### Update Action
+
 ```ruby
 def update
   if @project.update(project_params)
@@ -236,6 +245,7 @@ def update
   end
 end
 ```
+
 - **Purpose**: Modify an existing project
 - **Request Type**: PUT or PATCH
 - **Path**: `/api/v1/projects/:id`
@@ -255,17 +265,19 @@ end
 - **Atomic Updates**: All changes succeed or fail together (transaction)
 
 ### Destroy Action
+
 ```ruby
 def destroy
   @project.destroy
   head :no_content
 end
 ```
+
 - **Purpose**: Delete an existing project
 - **Request Type**: DELETE
 - **Path**: `/api/v1/projects/:id`
 - **Security**: Relies on `authorize_user` to verify ownership
-- **Database Impact**: 
+- **Database Impact**:
   - Removes the project record from the database
   - May also delete associated records depending on model dependencies
 - **Response Format**: No content in the body
@@ -278,27 +290,31 @@ end
 ## Private Methods
 
 ### set_project
+
 ```ruby
 def set_project
   @project = Project.find(params[:id])
 end
 ```
+
 - **Purpose**: Load a project record by its ID
 - **Used By**: show, update, and destroy actions
 - **Parameters**: Uses `params[:id]` from the route (URL path parameter)
 - **Return Value**: Sets an instance variable `@project` accessible to controller actions
-- **Error Handling**: 
+- **Error Handling**:
   - Rails automatically raises `ActiveRecord::RecordNotFound` if the project doesn't exist
   - This exception is handled by Rails and converted to a 404 response
 - **Performance Consideration**: Performs a primary key lookup, which is efficient
 - **Implementation Note**: Does not include any scoping by user, leaving that concern to `authorize_user`
 
 ### project_params
+
 ```ruby
 def project_params
   params.require(:project).permit(:title, :description, :status)
 end
 ```
+
 - **Purpose**: Implement strong parameters pattern to prevent mass assignment vulnerabilities
 - **Used By**: create and update actions
 - **Security Role**: Critical for preventing attackers from setting unauthorized attributes
@@ -306,12 +322,13 @@ end
   - `params.require(:project)` ensures the parameters contain a top-level "project" key
   - `.permit(:title, :description, :status)` whitelists only these specific attributes
   - Any other attributes in the request will be silently filtered out
-- **Error Handling**: 
+- **Error Handling**:
   - Raises `ActionController::ParameterMissing` if "project" key is missing
   - Rails converts this to a 400 Bad Request response
 - **Adaptability**: Easy to modify when adding new allowed attributes to the Project model
 
 ### authorize_user
+
 ```ruby
 def authorize_user
   unless @project.user_id == current_user.id
@@ -319,6 +336,7 @@ def authorize_user
   end
 end
 ```
+
 - **Purpose**: Verify the current user has permission to modify this project
 - **Used By**: update and destroy actions
 - **Security Role**: Critical authorization layer for protecting project data
@@ -335,11 +353,13 @@ end
 ## Authentication and Authorization Flow
 
 1. **Authentication** (verifying identity)
+
    - The `authenticate_user` before_action verifies the user's identity
    - This likely checks a JWT token in the Authorization header
    - Sets up a `current_user` object for the request
 
 2. **Resource Loading**
+
    - The `set_project` before_action loads the requested resource
    - No ownership verification at this stage, just fetching data
 
@@ -349,6 +369,7 @@ end
    - Only applied to actions that modify data
 
 This three-stage flow is a common pattern in secure API design, separating concerns:
+
 - "Who are you?" (Authentication)
 - "What do you want?" (Resource Loading)
 - "Are you allowed to do that?" (Authorization)
@@ -357,13 +378,13 @@ This three-stage flow is a common pattern in secure API design, separating conce
 
 This controller follows RESTful conventions and aligns with Rails routing best practices:
 
-| HTTP Verb | Path | Controller#Action | Purpose |
-|-----------|------|-------------------|---------|
-| GET | /api/v1/projects | projects#index | List user's projects |
-| POST | /api/v1/projects | projects#create | Create a new project |
-| GET | /api/v1/projects/:id | projects#show | Show a specific project |
-| PUT/PATCH | /api/v1/projects/:id | projects#update | Update a project |
-| DELETE | /api/v1/projects/:id | projects#destroy | Delete a project |
+| HTTP Verb | Path                 | Controller#Action | Purpose                 |
+| --------- | -------------------- | ----------------- | ----------------------- |
+| GET       | /api/v1/projects     | projects#index    | List user's projects    |
+| POST      | /api/v1/projects     | projects#create   | Create a new project    |
+| GET       | /api/v1/projects/:id | projects#show     | Show a specific project |
+| PUT/PATCH | /api/v1/projects/:id | projects#update   | Update a project        |
+| DELETE    | /api/v1/projects/:id | projects#destroy  | Delete a project        |
 
 The route definition for this controller would typically look like:
 
@@ -385,6 +406,7 @@ The controller implements several error handling patterns:
 4. **Validation Errors**: Handled in create/update with detailed error messages
 
 This layered approach ensures that:
+
 - Security errors are caught early in the request cycle
 - Data errors provide useful feedback to API consumers
 - Different error types receive appropriate status codes
@@ -404,6 +426,7 @@ end
 ```
 
 Benefits of this approach:
+
 - Clear separation between versions
 - Easy to implement
 - Supports maintaining multiple API versions simultaneously
@@ -417,15 +440,18 @@ Future API changes can be handled by creating a V2 module with updated controlle
 To thoroughly test this controller, you would want:
 
 1. **Authentication Tests**:
+
    - Requests without authentication should be rejected
    - Requests with invalid authentication should be rejected
    - Requests with valid authentication should proceed
 
 2. **Authorization Tests**:
+
    - Users should be able to modify their own projects
    - Users should not be able to modify others' projects
 
 3. **CRUD Operation Tests**:
+
    - Create: Valid and invalid project creation scenarios
    - Read: Retrieving individual and collections of projects
    - Update: Valid and invalid project update scenarios
@@ -449,3 +475,5 @@ This `ProjectsController` is a solid implementation of a RESTful API endpoint wi
 - Consistent JSON response structure
 
 The controller effectively handles the core CRUD operations while ensuring that users can only access and modify their own data, making it a secure foundation for a project management API.
+
+[Return to rails api cheat sheet](rails-api-cheat-sheet.md)

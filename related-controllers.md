@@ -313,3 +313,5 @@ Key security aspects implemented across controllers:
 3. Strong parameters to prevent mass assignment vulnerabilities
 4. Proper error responses with appropriate status codes
 5. Authorization checks at different hierarchy levels (project, task, comment)
+
+   [Return to rails api cheat sheet](rails-api-cheat-sheet.md)

@@ -14,13 +14,13 @@ module Api
       # GET /api/v1/tasks?status=in_progress&priority=high
       def index
         @tasks = Task.all
-        
+
         # Filter by status if provided
         @tasks = @tasks.where(status: params[:status]) if params[:status].present?
-        
+
         # Filter by priority if provided
         @tasks = @tasks.where(priority: params[:priority]) if params[:priority].present?
-        
+
         render json: @tasks
       end
     end
@@ -42,7 +42,7 @@ class TaskQuery
   def initialize(relation = Task.all)
     @relation = relation
   end
-  
+
   def call(params)
     scoped = relation
     scoped = filter_by_status(scoped, params[:status]) if params[:status].present?
@@ -52,17 +52,17 @@ class TaskQuery
     scoped = sort(scoped, params[:sort_by], params[:sort_direction]) if params[:sort_by].present?
     scoped
   end
-  
+
   private
-  
+
   def filter_by_status(scoped, status)
     scoped.where(status: status)
   end
-  
+
   def filter_by_priority(scoped, priority)
     scoped.where(priority: priority)
   end
-  
+
   def filter_by_due_date(scoped, due_before, due_after)
     if due_before.present? && due_after.present?
       scoped.where('due_date BETWEEN ? AND ?', due_after, due_before)
@@ -74,14 +74,14 @@ class TaskQuery
       scoped
     end
   end
-  
+
   def search(scoped, term)
     scoped.where('title ILIKE ? OR description ILIKE ?', "%#{term}%", "%#{term}%")
   end
-  
+
   def sort(scoped, sort_by, direction)
     direction = %w[asc desc].include?(direction.to_s.downcase) ? direction : 'asc'
-    
+
     case sort_by.to_s.downcase
     when 'due_date'
       scoped.order(due_date: direction)
@@ -107,6 +107,7 @@ end
 ```
 
 This pattern has several advantages:
+
 - Keeps controllers slim
 - Encapsulates query logic in a single, testable class
 - Makes complex queries more maintainable
@@ -124,7 +125,7 @@ gem 'kaminari'
 def index
   @tasks = TaskQuery.new(current_user.tasks).call(params)
   @tasks = @tasks.page(params[:page] || 1).per(params[:per_page] || 10)
-  
+
   render json: @tasks, meta: pagination_meta(@tasks)
 end
 
@@ -155,10 +156,10 @@ ActiveModelSerializers.config.adapter = :json_api
 def index
   @tasks = TaskQuery.new(current_user.tasks).call(params)
   @tasks = @tasks.page(params[:page] || 1).per(params[:per_page] || 10)
-  
+
   render json: {
     data: ActiveModel::Serializer::CollectionSerializer.new(
-      @tasks, 
+      @tasks,
       serializer: TaskSerializer
     ),
     meta: {
@@ -178,17 +179,17 @@ For a complex endpoint like "Get all tasks for a user":
 def index
   # Base query - get tasks for current user
   base_query = current_user.tasks.includes(:project)
-  
+
   # Apply all filters and sorting
   @tasks = TaskQuery.new(base_query).call(params)
-  
+
   # Paginate results
   @tasks = @tasks.page(params[:page] || 1).per(params[:per_page] || 10)
-  
+
   # Prepare response with pagination metadata
   render json: {
     tasks: ActiveModel::Serializer::CollectionSerializer.new(
-      @tasks, 
+      @tasks,
       serializer: TaskSerializer
     ),
     meta: pagination_meta(@tasks)
@@ -222,10 +223,10 @@ For more complex search functionality, you might want a dedicated search endpoin
 def search
   @tasks = TaskQuery.new(current_user.tasks).call(search_params)
   @tasks = @tasks.page(params[:page] || 1).per(params[:per_page] || 10)
-  
+
   render json: {
     tasks: ActiveModel::Serializer::CollectionSerializer.new(
-      @tasks, 
+      @tasks,
       serializer: TaskSerializer
     ),
     meta: pagination_meta(@tasks)
@@ -235,7 +236,7 @@ end
 private
 
 def search_params
-  params.permit(:status, :priority, :search, :page, :per_page, :sort_by, 
+  params.permit(:status, :priority, :search, :page, :per_page, :sort_by,
                 :sort_direction, :due_before, :due_after)
 end
 ```
@@ -287,15 +288,15 @@ For more complex filtering, you can accept JSON structured parameters:
 # GET /api/v1/tasks?filter={"status":["in_progress","todo"],"priority":"high"}
 def index
   filter_json = JSON.parse(params[:filter]) if params[:filter].present?
-  
+
   @tasks = current_user.tasks
-  
+
   if filter_json.present?
     @tasks = @tasks.where(status: filter_json['status']) if filter_json['status'].present?
     @tasks = @tasks.where(priority: filter_json['priority']) if filter_json['priority'].present?
     # Additional filtering...
   end
-  
+
   render json: @tasks
 end
 ```
@@ -312,7 +313,7 @@ class Task < ApplicationRecord
   scope :with_priority, ->(priority) { where(priority: priority) }
   scope :due_between, ->(start_date, end_date) { where('due_date BETWEEN ? AND ?', start_date, end_date) }
   scope :search_term, ->(term) { where('title ILIKE ? OR description ILIKE ?', "%#{term}%", "%#{term}%") }
-  
+
   # More scopes...
 end
 
@@ -334,7 +335,7 @@ gem 'ransack'
 def index
   @q = current_user.tasks.ransack(params[:q])
   @tasks = @q.result(distinct: true).page(params[:page]).per(params[:per_page])
-  
+
   render json: @tasks
 end
 ```
@@ -361,3 +362,5 @@ Task.where(status: 'in_progress', priority: 'high').order(due_date: :asc).explai
 ```
 
 This approach gives you a flexible, maintainable way to handle complex query parameters in your Rails API endpoints.
+
+[Return to rails api cheat sheet](rails-api-cheat-sheet.md)
