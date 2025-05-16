@@ -5,6 +5,7 @@
 This guide will walk you through building a complete Task Manager API using Ruby on Rails. The project covers all essential concepts for Rails API development while maintaining a practical, real-world focus.
 
 ## Table of Contents
+
 1. [Setup and Configuration](#1-setup-and-configuration)
 2. [Ruby Language Fundamentals](#2-ruby-language-fundamentals)
 3. [Rails Framework Basics](#3-rails-framework-basics)
@@ -25,6 +26,7 @@ This guide will walk you through building a complete Task Manager API using Ruby
 ## 1. Setup and Configuration
 
 ### Install Dependencies
+
 ```bash
 # Install Ruby (if not already installed)
 # For macOS using Homebrew
@@ -44,6 +46,7 @@ sudo apt install postgresql postgresql-contrib
 ```
 
 ### Create a New Rails API Project
+
 ```bash
 # Create a new Rails API-only application
 rails new task_manager_api --api --database=postgresql
@@ -53,6 +56,7 @@ cd task_manager_api
 ```
 
 ### Configure Database
+
 Edit `config/database.yml` to set up your PostgreSQL connection:
 
 ```yaml
@@ -79,6 +83,7 @@ production:
 ```
 
 ### Install Key Gems
+
 Add these gems to your `Gemfile`:
 
 ```ruby
@@ -98,6 +103,7 @@ gem 'shoulda-matchers', group: [:test]
 Run `bundle install` to install the gems.
 
 ### Configure CORS
+
 Edit `config/initializers/cors.rb`:
 
 ```ruby
@@ -120,6 +126,7 @@ Note: For production, replace `'*'` with your frontend domain for security.
 Here's a quick overview of essential Ruby concepts you'll use in Rails API development:
 
 ### Variables and Data Types
+
 ```ruby
 # Variables
 name = "John"  # String
@@ -139,6 +146,7 @@ user = {
 ```
 
 ### Methods
+
 ```ruby
 # Method definition
 def greet(name)
@@ -150,15 +158,16 @@ greeting = greet("John")
 ```
 
 ### Classes and Objects
+
 ```ruby
 class User
   attr_accessor :name, :email
-  
+
   def initialize(name, email)
     @name = name
     @email = email
   end
-  
+
   def display_info
     "#{name} (#{email})"
   end
@@ -169,6 +178,7 @@ puts user.display_info
 ```
 
 ### Control Flow
+
 ```ruby
 # Conditional statements
 if age >= 18
@@ -195,6 +205,7 @@ user_emails = users.map { |user| user.email }
 ### MVC Architecture
 
 Rails follows the Model-View-Controller (MVC) pattern:
+
 - **Models**: Handle data and business logic
 - **Views**: In API mode, these are JSON responses instead of HTML
 - **Controllers**: Handle HTTP requests and responses
@@ -202,6 +213,7 @@ Rails follows the Model-View-Controller (MVC) pattern:
 ### RESTful Conventions
 
 Rails encourages RESTful API design with these standard actions:
+
 - **index**: List all resources
 - **show**: Show a single resource
 - **create**: Create a new resource
@@ -209,6 +221,7 @@ Rails encourages RESTful API design with these standard actions:
 - **destroy**: Delete a resource
 
 ### Directory Structure
+
 Important directories in your Rails API project:
 
 ```
@@ -230,12 +243,14 @@ spec/ - Tests
 Let's plan our TaskManager API resources:
 
 ### Resources
+
 1. Users
 2. Projects
 3. Tasks
 4. Comments
 
 ### Entity Relationships
+
 - User has many Projects
 - Project belongs to User
 - Project has many Tasks
@@ -246,16 +261,19 @@ Let's plan our TaskManager API resources:
 ### API Endpoints
 
 #### Authentication
+
 - POST /api/v1/signup
 - POST /api/v1/login
 
 #### Users
+
 - GET /api/v1/users
 - GET /api/v1/users/:id
 - PUT /api/v1/users/:id
 - DELETE /api/v1/users/:id
 
 #### Projects
+
 - GET /api/v1/projects
 - GET /api/v1/projects/:id
 - POST /api/v1/projects
@@ -263,6 +281,7 @@ Let's plan our TaskManager API resources:
 - DELETE /api/v1/projects/:id
 
 #### Tasks
+
 - GET /api/v1/projects/:project_id/tasks
 - GET /api/v1/tasks/:id
 - POST /api/v1/projects/:project_id/tasks
@@ -270,6 +289,7 @@ Let's plan our TaskManager API resources:
 - DELETE /api/v1/tasks/:id
 
 #### Comments
+
 - GET /api/v1/tasks/:task_id/comments
 - POST /api/v1/tasks/:task_id/comments
 - DELETE /api/v1/comments/:id
@@ -279,6 +299,7 @@ Let's plan our TaskManager API resources:
 ## 5. Routes and Controllers
 
 ### Generate Models and Controllers
+
 ```bash
 # Generate User model and controller
 rails g model User name:string email:string password_digest:string
@@ -301,19 +322,21 @@ rails g controller Api::V1::Authentication signup login
 ```
 
 ### Routes Configuration
+
 Define your API routes in `config/routes.rb`:
 
 ```ruby
 Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
+
       # Authentication routes
       post '/signup', to: 'authentication#signup'
       post '/login', to: 'authentication#login'
-      
+
       # User routes
       resources :users, only: [:index, :show, :update, :destroy]
-      
+
       # Project routes
       resources :projects do
         # Nested task routes
@@ -322,7 +345,7 @@ Rails.application.routes.draw do
           resources :comments, only: [:index, :create]
         end
       end
-      
+
       # Direct routes for tasks and comments
       resources :tasks, only: [:show, :update, :destroy]
       resources :comments, only: [:destroy]
@@ -332,6 +355,7 @@ end
 ```
 
 ### Controller Implementation Example
+
 Let's implement the Projects controller as an example:
 
 ```ruby
@@ -342,29 +366,29 @@ module Api
       before_action :authenticate_user
       before_action :set_project, only: [:show, :update, :destroy]
       before_action :authorize_user, only: [:update, :destroy]
-      
+
       # GET /api/v1/projects
       def index
         @projects = current_user.projects
         render json: @projects
       end
-      
+
       # GET /api/v1/projects/:id
       def show
         render json: @project
       end
-      
+
       # POST /api/v1/projects
       def create
         @project = current_user.projects.build(project_params)
-        
+
         if @project.save
           render json: @project, status: :created
         else
           render json: { errors: @project.errors.full_messages }, status: :unprocessable_entity
         end
       end
-      
+
       # PUT /api/v1/projects/:id
       def update
         if @project.update(project_params)
@@ -373,23 +397,23 @@ module Api
           render json: { errors: @project.errors.full_messages }, status: :unprocessable_entity
         end
       end
-      
+
       # DELETE /api/v1/projects/:id
       def destroy
         @project.destroy
         head :no_content
       end
-      
+
       private
-      
+
       def set_project
         @project = Project.find(params[:id])
       end
-      
+
       def project_params
         params.require(:project).permit(:title, :description, :status)
       end
-      
+
       def authorize_user
         unless @project.user_id == current_user.id
           render json: { error: 'Unauthorized' }, status: :unauthorized
@@ -410,13 +434,13 @@ end
 # app/models/user.rb
 class User < ApplicationRecord
   has_secure_password
-  
+
   has_many :projects, dependent: :destroy
   has_many :comments, dependent: :destroy
-  
+
   # Add all tasks for a user through their projects
   has_many :tasks, through: :projects
-  
+
   validates :name, presence: true
   validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
 end
@@ -425,7 +449,7 @@ end
 class Project < ApplicationRecord
   belongs_to :user
   has_many :tasks, dependent: :destroy
-  
+
   validates :title, presence: true
   validates :status, inclusion: { in: ['planning', 'in_progress', 'completed'] }
 end
@@ -434,11 +458,11 @@ end
 class Task < ApplicationRecord
   belongs_to :project
   has_many :comments, dependent: :destroy
-  
+
   validates :title, presence: true
   validates :status, inclusion: { in: ['todo', 'in_progress', 'done'] }
   validates :priority, inclusion: { in: ['low', 'medium', 'high'] }
-  
+
   # Delegate user to project
   delegate :user, to: :project
 end
@@ -447,12 +471,13 @@ end
 class Comment < ApplicationRecord
   belongs_to :user
   belongs_to :task
-  
+
   validates :content, presence: true
 end
 ```
 
 ### Migrations
+
 Let's enhance our migrations with additional constraints and indexes:
 
 ```ruby
@@ -504,6 +529,7 @@ end
 ```
 
 Run migrations with:
+
 ```bash
 rails db:migrate
 ```
@@ -515,6 +541,7 @@ rails db:migrate
 We'll use Active Model Serializers to format our API responses:
 
 ### Install and Configure AMS
+
 First, ensure `active_model_serializers` is in your Gemfile and run `bundle install`.
 
 ### Create Serializers
@@ -533,14 +560,14 @@ rails g serializer comment
 # app/serializers/user_serializer.rb
 class UserSerializer < ActiveModel::Serializer
   attributes :id, :name, :email, :created_at, :updated_at
-  
+
   has_many :projects
 end
 
 # app/serializers/project_serializer.rb
 class ProjectSerializer < ActiveModel::Serializer
   attributes :id, :title, :description, :status, :created_at, :updated_at
-  
+
   belongs_to :user
   has_many :tasks
 end
@@ -549,7 +576,7 @@ end
 class TaskSerializer < ActiveModel::Serializer
   attributes :id, :title, :description, :due_date, :status, :priority,
              :created_at, :updated_at
-  
+
   belongs_to :project
   has_many :comments
 end
@@ -557,7 +584,7 @@ end
 # app/serializers/comment_serializer.rb
 class CommentSerializer < ActiveModel::Serializer
   attributes :id, :content, :created_at, :updated_at
-  
+
   belongs_to :user
   belongs_to :task
 end
@@ -577,11 +604,11 @@ module Api
   module V1
     class AuthenticationController < ApplicationController
       skip_before_action :authenticate_user, only: [:login, :signup]
-      
+
       # POST /api/v1/signup
       def signup
         user = User.new(user_params)
-        
+
         if user.save
           token = jwt_encode(user_id: user.id)
           render json: { user: UserSerializer.new(user), token: token }, status: :created
@@ -589,11 +616,11 @@ module Api
           render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
         end
       end
-      
+
       # POST /api/v1/login
       def login
         user = User.find_by(email: params[:email])
-        
+
         if user&.authenticate(params[:password])
           token = jwt_encode(user_id: user.id)
           render json: { user: UserSerializer.new(user), token: token }
@@ -601,9 +628,9 @@ module Api
           render json: { error: 'Invalid email or password' }, status: :unauthorized
         end
       end
-      
+
       private
-      
+
       def user_params
         params.permit(:name, :email, :password, :password_confirmation)
       end
@@ -619,14 +646,14 @@ Create a JWT handling module in `app/controllers/concerns/json_web_token.rb`:
 ```ruby
 module JsonWebToken
   extend ActiveSupport::Concern
-  
+
   SECRET_KEY = Rails.application.credentials.secret_key_base
-  
+
   def jwt_encode(payload, exp = 24.hours.from_now)
     payload[:exp] = exp.to_i
     JWT.encode(payload, SECRET_KEY)
   end
-  
+
   def jwt_decode(token)
     decoded = JWT.decode(token, SECRET_KEY)[0]
     HashWithIndifferentAccess.new(decoded)
@@ -644,15 +671,15 @@ Update the ApplicationController to handle authentication:
 # app/controllers/application_controller.rb
 class ApplicationController < ActionController::API
   include JsonWebToken
-  
+
   before_action :authenticate_user
-  
+
   private
-  
+
   def authenticate_user
     header = request.headers['Authorization']
     header = header.split(' ').last if header
-    
+
     begin
       @decoded = jwt_decode(header)
       @current_user = User.find(@decoded[:user_id])
@@ -660,7 +687,7 @@ class ApplicationController < ActionController::API
       render json: { error: 'Unauthorized' }, status: :unauthorized
     end
   end
-  
+
   def current_user
     @current_user
   end
@@ -674,6 +701,7 @@ end
 We're already using namespace-based versioning with `api/v1` prefix. This allows us to create new versions (v2, v3) while maintaining backward compatibility.
 
 ### Version Constraints
+
 If you need more sophisticated versioning, you can use header-based versioning:
 
 ```ruby
@@ -683,7 +711,7 @@ module ApiVersion
     def initialize(version)
       @version = version
     end
-    
+
     def matches?(request)
       request.headers['Accept'].include?("application/vnd.taskmanager.v#{@version}")
     end
@@ -701,7 +729,7 @@ Rails.application.routes.draw do
     scope module: :v1, constraints: ApiVersion::Constraint.new(1) do
       # Routes here
     end
-    
+
     # Future versions
     scope module: :v2, constraints: ApiVersion::Constraint.new(2) do
       # V2 routes here
@@ -721,23 +749,23 @@ Create an errors module in `app/controllers/concerns/error_handler.rb`:
 ```ruby
 module ErrorHandler
   extend ActiveSupport::Concern
-  
+
   included do
     rescue_from ActiveRecord::RecordNotFound, with: :not_found
     rescue_from ActiveRecord::RecordInvalid, with: :unprocessable_entity
     rescue_from ActionController::ParameterMissing, with: :bad_request
   end
-  
+
   private
-  
+
   def not_found(exception)
     render json: { error: exception.message }, status: :not_found
   end
-  
+
   def unprocessable_entity(exception)
     render json: { errors: exception.record.errors.full_messages }, status: :unprocessable_entity
   end
-  
+
   def bad_request(exception)
     render json: { error: exception.message }, status: :bad_request
   end
@@ -751,7 +779,7 @@ Include this in your ApplicationController:
 class ApplicationController < ActionController::API
   include JsonWebToken
   include ErrorHandler
-  
+
   # Rest of the code...
 end
 ```
@@ -777,7 +805,7 @@ class ApplicationController < ActionController::API
   include JsonWebToken
   include ErrorHandler
   include Response
-  
+
   # Rest of the code...
 end
 ```
@@ -857,24 +885,24 @@ RSpec.describe User, type: :model do
   it { should have_many(:projects).dependent(:destroy) }
   it { should have_many(:comments).dependent(:destroy) }
   it { should have_many(:tasks).through(:projects) }
-  
+
   # Validations
   it { should validate_presence_of(:name) }
   it { should validate_presence_of(:email) }
   it { should validate_uniqueness_of(:email) }
-  
+
   # Create a valid user
   let(:valid_user) { build(:user) }
-  
+
   it "is valid with valid attributes" do
     expect(valid_user).to be_valid
   end
-  
+
   it "is not valid without a password" do
     user = build(:user, password: nil)
     expect(user).not_to be_valid
   end
-  
+
   it "hashes the password" do
     user = create(:user, password: "password123")
     expect(user.password_digest).not_to eq "password123"
@@ -895,7 +923,7 @@ RSpec.describe "Api::V1::Projects", type: :request do
   let!(:projects) { create_list(:project, 3, user: user) }
   let(:project_id) { projects.first.id }
   let(:headers) { valid_headers }
-  
+
   # Helper method for authorization headers
   def valid_headers
     {
@@ -903,52 +931,52 @@ RSpec.describe "Api::V1::Projects", type: :request do
       "Content-Type" => "application/json"
     }
   end
-  
+
   # Helper method for token generation
   def token_generator(user_id)
     JsonWebToken.jwt_encode(user_id: user_id)
   end
-  
+
   describe "GET /api/v1/projects" do
     before { get "/api/v1/projects", headers: headers }
-    
+
     it "returns projects" do
       expect(json).not_to be_empty
       expect(json.size).to eq(3)
     end
-    
+
     it "returns status code 200" do
       expect(response).to have_http_status(200)
     end
   end
-  
+
   describe "GET /api/v1/projects/:id" do
     before { get "/api/v1/projects/#{project_id}", headers: headers }
-    
+
     context "when the record exists" do
       it "returns the project" do
         expect(json).not_to be_empty
         expect(json['id']).to eq(project_id)
       end
-      
+
       it "returns status code 200" do
         expect(response).to have_http_status(200)
       end
     end
-    
+
     context "when the record does not exist" do
       let(:project_id) { 100 }
-      
+
       it "returns status code 404" do
         expect(response).to have_http_status(404)
       end
-      
+
       it "returns a not found message" do
         expect(response.body).to match(/Couldn't find Project/)
       end
     end
   end
-  
+
   # Additional tests for POST, PUT, DELETE...
 end
 ```
@@ -960,6 +988,7 @@ end
 ### Database Optimization
 
 #### Indexes
+
 We've already added indexes to our migrations. Here are a few more considerations:
 
 1. Add composite indexes for frequently queried combinations
@@ -968,6 +997,7 @@ We've already added indexes to our migrations. Here are a few more consideration
 #### Query Optimization
 
 ##### N+1 Query Problem
+
 Use eager loading to avoid N+1 queries:
 
 ```ruby
@@ -1041,7 +1071,7 @@ describe 'Projects API' do
       tags 'Projects'
       security [Bearer: []]
       produces 'application/json'
-      
+
       response '200', 'projects found' do
         schema type: :array,
           items: {
@@ -1056,20 +1086,20 @@ describe 'Projects API' do
             },
             required: ['id', 'title', 'status']
           }
-        
+
         run_test!
       end
-      
+
       response '401', 'unauthorized' do
         schema type: :object,
           properties: {
             error: { type: :string }
           }
-        
+
         run_test!
       end
     end
-    
+
     # More operations...
   end
 end
@@ -1090,6 +1120,7 @@ The Swagger UI will be available at `/api-docs`.
 ### Preparing for Production
 
 #### Environment Variables
+
 Use the `dotenv-rails` gem for environment variables:
 
 ```ruby
@@ -1098,6 +1129,7 @@ gem 'dotenv-rails'
 ```
 
 Create a `.env` file:
+
 ```
 DATABASE_URL=postgres://user:password@localhost/task_manager_production
 JWT_SECRET_KEY=your_secret_key
@@ -1105,7 +1137,9 @@ RAILS_MAX_THREADS=5
 ```
 
 #### Procfile
+
 Create a `Procfile` for services:
+
 ```
 web: bundle exec puma -C config/puma.rb
 release: bundle exec rails db:migrate
@@ -1139,11 +1173,13 @@ heroku run rails db:migrate
 ### Other Deployment Options
 
 #### AWS Elastic Beanstalk
+
 1. Create Elastic Beanstalk environment
 2. Set up RDS for database
 3. Deploy with EB CLI or AWS console
 
 #### Docker Deployment
+
 Create a `Dockerfile`:
 
 ```dockerfile
@@ -1170,14 +1206,14 @@ services:
       - postgres_data:/var/lib/postgresql/data
     environment:
       POSTGRES_PASSWORD: password
-  
+
   web:
     build: .
     command: bash -c "rm -f tmp/pids/server.pid && bundle exec rails s -b '0.0.0.0'"
     volumes:
       - .:/app
     ports:
-      - "3000:3000"
+      - '3000:3000'
     depends_on:
       - db
     environment:
