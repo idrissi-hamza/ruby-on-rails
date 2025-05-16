@@ -323,6 +323,8 @@ rails g controller Api::V1::Authentication signup login
 
 ### Routes Configuration
 
+[Routes Configuration Details](details-routes-configuration.md)
+
 Define your API routes in `config/routes.rb`:
 
 ```ruby
@@ -423,6 +425,10 @@ module Api
   end
 end
 ```
+
+[Projects controller Details](projects-controller.md)
+
+[Other controllers Details](related-controllers.md)
 
 ---
 
@@ -533,6 +539,8 @@ Run migrations with:
 ```bash
 rails db:migrate
 ```
+
+[more details](rails-models-db.md)
 
 ---
 
